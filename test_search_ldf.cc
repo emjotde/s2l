@@ -64,6 +64,16 @@ class Tok {
     std::vector<Lex> lex_;
 };
 
+class Morfs {
+  public:
+    example* data() { return examples_; }
+    size_t size() { return size_; }
+
+  private:
+    example* examples_;
+    size_t   size_;
+};
+
 class Sent {
   public:
     Tok& tok() {
@@ -80,7 +90,11 @@ class Sent {
         o << t;
       return o;
     }
-    
+
+    Morfs operator[](size_t i) {
+      
+    }
+
   private:
     std::vector<Tok> tok_;
 };

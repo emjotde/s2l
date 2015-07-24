@@ -26,3 +26,6 @@
 *.exe
 *.out
 *.app
+
+examples
+test_search_ldf
