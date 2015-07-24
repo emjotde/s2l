@@ -38,3 +38,16 @@ class VowpalTaggit {
     Sent& getSent();
 };
 
+%perlcode %{
+sub ppredict {
+    my $self = shift;
+    my @out;
+    my $v = new VowpalTaggit::vectori();
+    $self->predict($v);
+    for(my $i = 0; $i < $v->size(); $i++) {
+        push(@out, $v->get($i));
+    }
+    return @out;
+}
+%}
+
