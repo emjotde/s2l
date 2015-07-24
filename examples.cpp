@@ -62,15 +62,13 @@ class Morfs {
 
     void reset(size_t size) {
       if(data_ != nullptr) {
-         //delete[] data_;
-        //data_ = nullptr;
+        for(size_t a = 0; a < size_; a++)
+          VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, data_[a]);
+        free(data_);
+        data_ = nullptr;
       }
       
       data_ = VW::alloc_examples(sizeof(COST_SENSITIVE::label), size);                              
-      COST_SENSITIVE::wclass default_wclass = { 0., 0, 0., 0. };                                                  
-      for (size_t a = 0; a < size; a++) {                                                                   
-        data_[a].l.cs.costs.push_back(default_wclass);                                         
-      }   
       size_ = size;
       oracle_ = size_ + 1;
     }
@@ -78,8 +76,11 @@ class Morfs {
     example& operator[](size_t i) { return data_[i]; }
 
     ~Morfs() {
-      //if(data_ != nullptr)
-         //delete[] data_;
+      if(data_ != nullptr) {
+        for(size_t a = 0; a < size_; a++)
+          VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, data_[a]);
+        free(data_);
+      }
     }
 
     size_t oracle() { return oracle_; }
@@ -114,21 +115,17 @@ class Tok {
     Tok& done() {
       morfs_.reset(lex_.size());
       for(size_t i = 0; i < morfs_.size(); i++) {
-         ezexample* ez = new ezexample(vw_, &morfs_[i], false);
-         (*ez)(vw_namespace('s'))("w^" + orth_);
-         (*ez)(vw_namespace('t'))("t^" + lex_[i].ctag())("b^" + lex_[i].base());
-         ez->set_label(std::string("1111:") + std::string(lex_[i].isOracle() ? "0" : "1"));
+        ezexample ez(vw_, &morfs_[i], false);
+        ez(vw_namespace('s'))("w^" + orth_);
+        ez(vw_namespace('t'))("t^" + lex_[i].ctag())("b^" + lex_[i].base());
+        
+        COST_SENSITIVE::wclass default_wclass = { 0., 0, 0., 0. };                                                  
+        ez.get()->l.cs.costs.push_back(default_wclass);
          
-         //COST_SENSITIVE::wclass zero = { 0., 1, 0., 0. };                                                  
-         //ez.get()->l.cs.costs.push_back(zero);
-         
-         if(lex_[i].isOracle())
-           morfs_.setOracle(i);
-         
-         // l.cs.costs[0].class_index
-         
+        if(lex_[i].isOracle())
+          morfs_.setOracle(i);
       }
-      std::cerr << "Oracle: " << morfs_.oracle() << std::endl;
+      //std::cerr << "Oracle: " << morfs_.oracle() << std::endl;
       return *this;
     }
 
@@ -217,10 +214,8 @@ class SequenceLabelerTask : public SearchTask<Sent, vector<uint32_t>> {
   SequenceLabelerTask(vw* vw_obj)
       : SearchTask<Sent, vector<uint32_t> >(*vw_obj) {  // must run parent constructor!
     sch.set_options( Search::AUTO_HAMMING_LOSS | Search::NO_CACHING | Search::AUTO_CONDITION_FEATURES | Search::IS_LDF );
-    sch.set_label_parser( COST_SENSITIVE::cs_label, [](polylabel&l) -> bool { return l.cs.costs.size() == 0; });
     
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
-    cerr << "num_actions = " << d->num_actions << endl;
   }
 
   // using vanilla vw interface
@@ -228,8 +223,26 @@ class SequenceLabelerTask : public SearchTask<Sent, vector<uint32_t>> {
     output.clear();
     for (size_t i = 0; i < sentence.size(); i++) {
       Morfs& morfs = sentence[i];
+      
+      // Is this needed? 
+      example* ldf_examples = VW::alloc_examples(sizeof(COST_SENSITIVE::label), morfs.size());
+      
+      for (size_t a = 0; a < morfs.size(); a++) {
+        if (sch.predictNeedsExample())
+          VW::copy_example_data(false, &ldf_examples[a], &morfs.data()[a]);  // copy but leave label alone!
+        
+        COST_SENSITIVE::label& lab = ldf_examples[a].l.cs;
+        COST_SENSITIVE::wclass default_wclass = { 0., 0, 0., 0. };                                                  
+        lab.costs.push_back(default_wclass);
+        
+        lab.costs[0].x = 0.;
+        lab.costs[0].class_index = (uint32_t)a + 1;
+        lab.costs[0].partial_prediction = 0.;
+        lab.costs[0].wap_value = 0.;
+      }
+
       action p = Search::predictor(sch, i + 1)
-        .set_input(morfs.data(), morfs.size())
+        .set_input(ldf_examples, morfs.size())
         .set_oracle(morfs.oracle())
         .set_condition(i, 'p')
         .predict();
@@ -241,7 +254,7 @@ class SequenceLabelerTask : public SearchTask<Sent, vector<uint32_t>> {
 };
 
 int main(int argc, char *argv[]) {
-  Examples ex("--hash all -b 31 --csoaa_ldf m --search 0 --search_task hook");
+  Examples ex("--hash all -b 24 --csoaa_ldf mc --quiet --search 0 --search_task hook");
   
   Sent s = ex.newSent();
 
