@@ -36,7 +36,7 @@ class Lex {
        return oracle_;
     }
 
-    friend std::ostream& operator<<(std::ostream &o, const Lex& l) {
+    friend inline std::ostream& operator<<(std::ostream &o, const Lex& l) {
       o << ( l.oracle_ ? "*" : " " ) << l.ctag_ << "\t" << l.base_ << std::endl;
       return o;
     }
@@ -137,7 +137,7 @@ class Tok {
 
     Morfs& morfs() { return morfs_; }
 
-    friend std::ostream& operator<<(std::ostream &o, const Tok& t) {
+    friend inline std::ostream& operator<<(std::ostream &o, const Tok& t) {
       o << t.orth_ << std::endl;
       for(auto& l : t.lex_)
         o << "\t" << l;
@@ -204,7 +204,7 @@ class Sent {
       return tok_.size();
     }
     
-    friend std::ostream& operator<<(std::ostream &o, const Sent& s) {
+    friend inline std::ostream& operator<<(std::ostream &o, const Sent& s) {
       o << "#BOS" << std::endl;
       for(auto& t : s.tok_)
         o << t;
@@ -219,18 +219,8 @@ class Sent {
 
 class Examples {
   public:
-    Examples(const std::string& vwstring) {
-      vw_ = VW::initialize(vwstring);
-    }
+    Examples(vw* vwp) : vw_(vwp) {}
 
-    ~Examples() {
-      VW::finish(*vw_);
-    }
-
-    vw* getVw() {
-      return vw_;
-    }
-    
     Sent* newSent() {
       return new Sent(vw_);
     }
@@ -242,7 +232,7 @@ class Examples {
 class SequenceLabeler : public SearchTask<Sent, vector<int>> {
   public:
   SequenceLabeler(vw* vw_obj)
-      : SearchTask<Sent, vector<int> >(*vw_obj) {  // must run parent constructor!
+      : SearchTask<Sent, vector<int> >(*vw_obj) { 
     sch.set_options( Search::AUTO_HAMMING_LOSS | Search::NO_CACHING | Search::AUTO_CONDITION_FEATURES | Search::IS_LDF );
     
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
@@ -276,7 +266,11 @@ class SequenceLabeler : public SearchTask<Sent, vector<int>> {
         .set_oracle(morfs.oracle())
         .set_condition(i, 'p')
         .predict();
-        
+       
+      for(size_t a = 0; a < morfs.size(); a++)
+        VW::dealloc_example(COST_SENSITIVE::cs_label.delete_label, ldf_examples[a]);
+      free(ldf_examples);
+      
       output.push_back(p);
     }
   }

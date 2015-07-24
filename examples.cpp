@@ -1,23 +1,15 @@
 #include <iostream>
+#include <sstream>
 
 #include "VowpalTaggit.hpp"
 
 int main(int argc, char *argv[]) {
   VowpalTaggit vt;
   
-  vt.bos()
-    .tok().orth("test")
-      .lex().base("test1").ctag("t:t:t:t")
-      .lex().base("test2").ctag("t:t:t:t").oracle()
-    .eos().learn();
-  
-  std::vector<int> predict;
-  
-  vt.bos()
-    .tok().orth("test")
-      .lex().base("test2").ctag("t:t:t:t")
-      .lex().base("test1").ctag("t:t:t:t")
-    .eos().predict(predict);
-  
-  std::cout << predict[0] << std::endl;
+  std::ios_base::sync_with_stdio(false);
+  std::string line;
+  while(std::getline(std::cin, line))
+    vt.read(line);
+    
+  //vt.save()
 }
