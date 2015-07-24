@@ -1,11 +1,21 @@
-#pragma once
+// File : gd.i
+%module VowpalTaggit
 
-#include <vector>
-#include <memory>
+#undef seed
 
-class Examples;
-class SequenceLabeler;
-class Sent;
+
+%include "std_vector.i"
+%include "std_string.i"
+
+namespace std {
+    %template(vectori) vector<int>;
+    %template(vectord) vector<double>;
+};
+
+%{
+#include "VowpalTaggit.hpp"
+%}
+
 
 class VowpalTaggit {
   public:
@@ -26,11 +36,5 @@ class VowpalTaggit {
     VowpalTaggit& oracle();
     
     Sent& getSent();
-    
-  private:
-    Sent* currSent_;
-    
-    Examples* example_;
-    SequenceLabeler* sl_; 
 };
 

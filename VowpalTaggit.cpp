@@ -9,11 +9,11 @@ VowpalTaggit::VowpalTaggit()
 {}
 
 VowpalTaggit& VowpalTaggit::learn() {
-  std::vector<uint32_t> output;
+  std::vector<int> output;
   sl_->learn(*currSent_, output);
 }
 
-VowpalTaggit& VowpalTaggit::predict(std::vector<uint32_t>& output) {
+VowpalTaggit& VowpalTaggit::predict(std::vector<int>& output) {
   sl_->predict(*currSent_, output);
 }
 

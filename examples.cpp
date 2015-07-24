@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
       .lex().base("test2").ctag("t:t:t:t").oracle()
     .eos().learn();
   
-  std::vector<uint32_t> predict;
+  std::vector<int> predict;
   
   vt.bos()
     .tok().orth("test")

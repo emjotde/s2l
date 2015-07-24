@@ -239,17 +239,17 @@ class Examples {
     vw* vw_;
 };
 
-class SequenceLabeler : public SearchTask<Sent, vector<uint32_t>> {
+class SequenceLabeler : public SearchTask<Sent, vector<int>> {
   public:
   SequenceLabeler(vw* vw_obj)
-      : SearchTask<Sent, vector<uint32_t> >(*vw_obj) {  // must run parent constructor!
+      : SearchTask<Sent, vector<int> >(*vw_obj) {  // must run parent constructor!
     sch.set_options( Search::AUTO_HAMMING_LOSS | Search::NO_CACHING | Search::AUTO_CONDITION_FEATURES | Search::IS_LDF );
     
     HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
   }
 
   // using vanilla vw interface
-  void _run(Search::search& sch, Sent& sentence, vector<uint32_t>& output) {
+  void _run(Search::search& sch, Sent& sentence, vector<int>& output) {
     output.clear();
     for (size_t i = 0; i < sentence.size(); i++) {
       Morfs& morfs = sentence[i];
@@ -266,7 +266,7 @@ class SequenceLabeler : public SearchTask<Sent, vector<uint32_t>> {
         lab.costs.push_back(default_wclass);
         
         lab.costs[0].x = 0.;
-        lab.costs[0].class_index = (uint32_t)a + 1;
+        lab.costs[0].class_index = (int)a + 1;
         lab.costs[0].partial_prediction = 0.;
         lab.costs[0].wap_value = 0.;
       }
