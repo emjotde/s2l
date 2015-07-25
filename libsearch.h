@@ -37,8 +37,8 @@ template<class INPUT, class OUTPUT> class SearchTask {
     
   }
   ~SearchTask() {
-    VW::dealloc_example(vw_obj.p->lp.delete_label, *bogus_example); free(bogus_example);
-    VW::dealloc_example(vw_obj.p->lp.delete_label, *blank_line);    free(blank_line);
+    VW::dealloc_example(NULL, *bogus_example); free(bogus_example);
+    VW::dealloc_example(NULL, *blank_line);    free(blank_line);
   }
 
   virtual void _run(Search::search&sch, INPUT& input_example, OUTPUT& output) {}  // YOU MUST DEFINE THIS FUNCTION!

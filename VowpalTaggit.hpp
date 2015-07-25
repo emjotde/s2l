@@ -10,23 +10,40 @@ class vw;
 
 class VowpalTaggit {
   public:
-    VowpalTaggit();
+    VowpalTaggit(int argc, char **argv);
     ~VowpalTaggit();
   
-    static vw* vwInit();
+    static vw* vwInit(int argc, char **argv);
   
-    static std::string vwString() {
+    static std::string vwTrainString() {
       return
         " --hash all --quiet --csoaa_ldf mc --search 0 --search_task hook"
         " --noconstant -b 31 -q t:";
+    }
+    
+    static std::string vwTestString() {
+      return
+        " --quiet -t ";
+    }
+    
+    VowpalTaggit& addHook(std::function<void(VowpalTaggit&)> hook) {
+      hooks_.push_back(hook);
+      return *this;
     }
     
     VowpalTaggit& report(std::ostream& o);
   
     VowpalTaggit& learn();
     VowpalTaggit& predict(std::vector<int>& output);
-    
-    VowpalTaggit& read(const std::string line);
+        
+    VowpalTaggit& read(std::istream& in) {
+      std::string line;
+      while(std::getline(in, line))
+        readLine(line);
+    }
+    VowpalTaggit& readLine(const std::string& line);
+        
+    VowpalTaggit& save(const std::string& predictor);
     
     VowpalTaggit& bos();
     VowpalTaggit& eos();
@@ -38,15 +55,24 @@ class VowpalTaggit {
     VowpalTaggit& oracle();
     
     Sent& getSent();
+    size_t sentNum() {
+      return sentencesLearned_;
+    }
+  
+  // convienience functions
+  
+  VowpalTaggit& operator()(std::function<void(VowpalTaggit&)> hook) { return addHook(hook); }
+  VowpalTaggit& operator()(std::istream& in) { return read(in); }
   
   private:
     Sent* currSent_;
-    
+    bool testing_;
     vw* vw_;
     
     Examples* example_;
     SequenceLabeler* sl_;
     
     size_t sentencesLearned_;
+    std::vector<std::function<void(VowpalTaggit&)>> hooks_;
 };
 
