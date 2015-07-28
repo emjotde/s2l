@@ -10,15 +10,17 @@ class vw;
 
 class VowpalTaggit {
   public:
+    VowpalTaggit(const std::string&);
     VowpalTaggit(int argc, char **argv);
     ~VowpalTaggit();
   
+    static vw* vwInit(std::string);
     static vw* vwInit(int argc, char **argv);
   
     static std::string vwTrainString() {
       return
-        " --hash all --quiet --csoaa_ldf mc --search 0 --search_task hook"
-        " --noconstant -b 31 -q t:";
+        " --quiet --csoaa_ldf mc --search 0 --search_task hook"
+        " -b 28 -q t:";
     }
     
     static std::string vwTestString() {
@@ -31,6 +33,11 @@ class VowpalTaggit {
       return *this;
     }
     
+    VowpalTaggit& clearHooks() {
+      hooks_.clear();
+      return *this;
+    }
+    
     VowpalTaggit& report(std::ostream& o);
   
     VowpalTaggit& learn();
@@ -38,8 +45,10 @@ class VowpalTaggit {
         
     VowpalTaggit& read(std::istream& in) {
       std::string line;
+      sentencesLearned_ = 0;
       while(std::getline(in, line))
         readLine(line);
+      return *this;
     }
     VowpalTaggit& readLine(const std::string& line);
         

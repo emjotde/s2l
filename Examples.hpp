@@ -6,44 +6,24 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #include <sstream>
 
-class Lex {
-  public:
-    Lex() : oracle_(false) {};
-
-    Lex& base(const std::string& base) {
-      base_ = base;
-      return *this;
-    }
-
-    const std::string& base() { return base_; }
-    const std::string& ctag() { return ctag_; }
-
-    Lex& ctag(const std::string& ctag) {
-      ctag_ = ctag;
-      return *this;
-    }
-
-    Lex& oracle() {
-      oracle_ = true;
-      return *this;
-    }
-
-    bool isOracle() {
-       return oracle_;
-    }
-
-    friend inline std::ostream& operator<<(std::ostream &o, const Lex& l) {
-      o << ( l.oracle_ ? "*" : " " ) << l.ctag_ << "\t" << l.base_ << std::endl;
-      return o;
-    }
-
-  private:
-    std::string base_;
-    std::string ctag_;
-    bool oracle_;
+struct Feature {
+  Feature(const std::string& name) : name(name), weight(1.0) {}
+  Feature(const std::string& name, double weight) : name(name), weight(weight) {}
+  
+  bool operator<(const Feature& o) const {
+    return name < o.name;
+  }
+  
+  std::string name;
+  double weight;
 };
+
+typedef char Namespace;
+typedef std::set<Feature> Features;
+typedef std::map<Namespace, Features> FeatureNS;
 
 class Morfs {
   public:
@@ -59,6 +39,9 @@ class Morfs {
 
     example* data() { return data_; };
     size_t size() { return size_; };
+    
+    example* begin() { return data_; }
+    example* end() { return data_ + size_; }
 
     void reset(size_t size) {
       if(data_ != nullptr) {
@@ -92,13 +75,95 @@ class Morfs {
     size_t oracle_;
 };
 
+class Tok;
+
+class Lex {
+  public:
+    Lex(Tok& parent) : oracle_(false), parent_(parent) {};
+
+    const std::string& base() { return base_; }
+    const std::string& ctag() { return ctag_; }
+
+    Lex& base(const std::string& base) {
+      base_ = base;
+      return *this;
+    }
+    
+    Lex& ctag(const std::string& ctag) {
+      ctag_ = ctag;
+      return *this;
+    }
+
+    Lex& oracle() {
+      oracle_ = true;
+      return *this;
+    }
+
+    bool isOracle() {
+       return oracle_;
+    }
+
+    const std::string& getBase() {
+      return base_;
+    }
+    
+    const std::string& getCtag() {
+      return ctag_;
+    }
+    
+    friend inline std::ostream& operator<<(std::ostream &o, const Lex& l) {
+      o << ( l.oracle_ ? "*" : " " ) << l.ctag_ << "\t" << l.base_ << std::endl;
+      return o;
+    }
+
+    FeatureNS& getNamespace() {
+      return features_;
+    }
+    
+    static void FF(std::function<void(Lex&)> ff) {
+      hooks_.push_back(ff);
+    }
+    
+    void runFF() {
+      for(auto& ff: hooks_)
+        ff(*this);
+    }
+    
+    Tok& getTok() {
+      return parent_;
+    }
+    
+  private:
+    FeatureNS features_;
+    static std::vector<std::function<void(Lex&)>> hooks_;
+    
+    std::string base_;
+    std::string ctag_;
+    bool oracle_;
+    Tok& parent_;
+};
+
+class Sent;
+
 class Tok {
   public:
-    Tok(vw* vwMain) : vw_(vwMain) {}
+    Tok(vw* vwMain, Sent& parent, size_t i)
+      : vw_(vwMain), parent_(parent), i_(i) {}
+      
     Tok(Tok&& o) 
       : vw_(std::move(o.vw_)), morfs_(std::move(o.morfs_)),
-        orth_(std::move(o.orth_)), lex_(std::move(o.lex_))
-    {}
+        orth_(std::move(o.orth_)),
+        parent_(o.parent_), i_(o.i_)
+    {
+      // move lex to new parent
+      for(auto& lex : o.lex_) {
+        lex_.emplace_back(*this);
+        lex_.back().base(lex.getBase()); 
+        lex_.back().ctag(lex.getCtag());
+        if(lex.isOracle())
+          lex_.back().oracle();
+      }
+    }
 
     Tok(const Tok&) = delete;
 
@@ -108,28 +173,67 @@ class Tok {
     }
 
     Lex& lex() {
-      lex_.emplace_back();
+      lex_.emplace_back(*this);
       return lex_.back();
     }
     
     Lex& back() {
       return lex_.back();
     }
+    
+    const std::string& getOrth() {
+      return orth_;
+    }
 
+    std::vector<Lex>::iterator begin() {
+      return lex_.begin();
+    }
+    
+    std::vector<Lex>::iterator end() {
+      return lex_.end();
+    }
+    
+    Lex& operator[](size_t i) {
+       return lex_[i];
+    }
+    
+    size_t size() {
+      return lex_.size();
+    }
+    
+    void nsToExample(example* ex, FeatureNS& features) {
+      ezexample ez(vw_, ex, false);
+      for(auto& ns : features) {
+        ez(vw_namespace(ns.first));
+        for(auto& f : ns.second) ez(f.name, f.weight);
+      }
+    }
+    
+    FeatureNS& getNamespace() {
+      return features_;
+    }
+
+    void initExampleWeight(example* ex) {
+      COST_SENSITIVE::wclass default_wclass = { 0., 0, 0., 0. };
+      ex->l.cs.costs.push_back(default_wclass);
+    }
+    
     Tok& done() {
+      runFF();
+      for(auto& l : lex_)
+        l.runFF();
+      
       morfs_.reset(lex_.size());
       for(size_t i = 0; i < morfs_.size(); i++) {
-        ezexample ez(vw_, &morfs_[i], false);
-        ez(vw_namespace('s'))("w^" + orth_);
-        ez(vw_namespace('t'))("t^" + lex_[i].ctag())("b^" + lex_[i].base());
+        example* ex = &morfs_[i];
+        initExampleWeight(ex);
+          
+        nsToExample(ex, getNamespace());
+        nsToExample(ex, lex_[i].getNamespace());
         
-        COST_SENSITIVE::wclass default_wclass = { 0., 0, 0., 0. };                                                  
-        ez.get()->l.cs.costs.push_back(default_wclass);
-         
         if(lex_[i].isOracle())
           morfs_.setOracle(i);
       }
-      //std::cerr << "Oracle: " << morfs_.oracle() << std::endl;
       return *this;
     }
 
@@ -142,10 +246,36 @@ class Tok {
       return o;
     }
 
+    static void FF(std::function<void(Tok&)> ff) {
+      hooks_.push_back(ff);
+    }
+    
+    void runFF() {
+      for(auto& ff: hooks_)
+        ff(*this);
+    }
+    
+    Sent& getSentence() {
+      return parent_;
+    }
+    
+    size_t getI() {
+      return i_;
+    }
+    
+    void setI(size_t i) {
+      i_ = i;
+    }
+    
   private:
+    FeatureNS features_;
+    static std::vector<std::function<void(Tok&)>> hooks_;
+      
     std::string orth_;
     std::vector<Lex> lex_;
     vw* vw_;
+    Sent& parent_;
+    size_t i_;
     Morfs morfs_;
 };
 
@@ -157,9 +287,9 @@ class Sent {
     ~Sent() {}
     
     Sent& tok() {
-      if(!tok_.empty()) 
-         tok_.back().done();
-      tok_.emplace_back(vw_);
+      //if(!tok_.empty()) 
+      //   tok_.back().done();
+      tok_.emplace_back(vw_, *this, size());
       return *this;
     }
     
@@ -189,13 +319,21 @@ class Sent {
     }
 
     Sent& eos() {
-      if(!tok_.empty()) 
-         tok_.back().done();
+      for(auto& t: tok_)
+        t.done();
       return *this;
     }
+    
+    std::vector<Tok>::iterator begin() {
+      return tok_.begin();
+    }
+    
+    std::vector<Tok>::iterator end() {
+      return tok_.end();
+    }
 
-    Morfs& operator[](size_t i) {
-       return tok_[i].morfs();
+    Tok& operator[](size_t i) {
+       return tok_[i];
     }
 
     size_t size() {

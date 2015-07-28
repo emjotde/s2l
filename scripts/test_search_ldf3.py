@@ -97,22 +97,16 @@ for line in sys.stdin:
 
 
 # initialize VW as usual, but use 'hook' as the search_task
-vw = pyvw.vw("--search 0 --hash all -b 31 --csoaa_ldf mc --quiet --search_task hook -q t: -q m: --ngram t2 --ngram m2 --ngram g2 --ngram c2")
+#vw = pyvw.vw("--search 0 --hash all -b 31 --csoaa_ldf mc --quiet --search_task hook -q t: -q m: --ngram t2 --ngram m2 --ngram g2 --ngram c2")
+vw = pyvw.vw("--search 0 --hash all -b 31 --csoaa_ldf mc --quiet --search_task hook -q ::")
 
 # tell VW to construct your search task object
 sequenceLabeler = vw.init_search_task(SequenceLabeler)
 
 
-l = len(data)
 train = data[:77072]
-shuffle(train)
 test  = data[77072:]
-#l = len(data)
-#train = data[:9000]
-#shuffle(train)
-#test  = data[9000:]
 
-print len(train), len(test)
 
 def prepare(test):
   for s in range(len(test)):
@@ -138,8 +132,8 @@ def prepare(test):
 
 prepare(test)
 
-step = 2000
-strides = int(l*0.9)/step
+step = 500
+strides = len(data)/step
 for i in range(strides):
     
     subtrain = train[step*i:step*i+step]
@@ -160,7 +154,7 @@ for i in range(strides):
         
         s, o = sentence
         p = sequenceLabeler.predict(s)
-        
+        print p
         #print "Oracle:  ", oracle
         #print "OracleK:  ", oracleK
         #

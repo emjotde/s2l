@@ -1,8 +1,18 @@
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string.hpp>
+
 
 #include "Examples.hpp"
 #include "Search.hpp"
 #include "VowpalTaggit.hpp"
+
+VowpalTaggit::VowpalTaggit(const std::string& cli)
+: currSent_(nullptr),
+  vw_(vwInit(cli)),
+  example_(new Examples(vw_)),
+  sl_(new SequenceLabeler(vw_)),
+  sentencesLearned_(0)
+{}
 
 VowpalTaggit::VowpalTaggit(int argc, char** argv)
 : currSent_(nullptr),
@@ -18,11 +28,24 @@ VowpalTaggit::~VowpalTaggit() {
   delete sl_;
 }
 
+vw* VowpalTaggit::vwInit(std::string cli) {
+  std::vector<std::string> args;
+  boost::split(args, cli, boost::is_any_of(" "));
+  int argc = args.size() + 1;
+  char* argv[argc];
+  argv[0] = const_cast<char*>("bogus");
+  for(size_t i = 1; i < argc; i++)
+    argv[i] = const_cast<char*>(args[i-1].c_str());
+  return vwInit(argc, argv);
+}
+
 vw* VowpalTaggit::vwInit(int argc, char** argv) {
   namespace po = boost::program_options;
   
   bool testing;
   bool help;
+  bool noop;
+  
   std::string finalModel;
   std::string initialModel;
   
@@ -34,7 +57,8 @@ vw* VowpalTaggit::vwInit(int argc, char** argv) {
      "Do not train")
     ("initial_model,i", po::value<std::string>(&initialModel),
      "Load initial model from file  arg")
-    ("help,h", po::value(&help)->zero_tokens()->default_value(false),
+    ("noop,n", po::value(&noop)->zero_tokens()->default_value(false),
+     "Print this help message and exit")("help,h", po::value(&help)->zero_tokens()->default_value(false),
      "Print this help message and exit")
   ;
 
@@ -70,6 +94,8 @@ vw* VowpalTaggit::vwInit(int argc, char** argv) {
     vwSS << " -i " << initialModel; 
   if(!finalModel.empty())
     vwSS << " -f " << finalModel; 
+  if(noop)
+    vwSS << " --noop";
   
   std::cerr << vwSS.str() << std::endl;
   return VW::initialize(vwSS.str());
