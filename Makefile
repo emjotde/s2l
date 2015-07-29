@@ -26,7 +26,9 @@ clean:
 	rm -rf trainer tagged.xml tagged.idx tagged.accuracy
 
 swig:
+	cd perl
 	swig -perl5 -c++ VowpalTaggit.i
 	perl -i -pe 's/#include <algorithm>/#undef seed\n#include <algorithm>/' VowpalTaggit_wrap.cxx
 	g++ -shared -std=c++11 VowpalTaggit_wrap.cxx VowpalTaggit.cpp libsearch.h -w \
 	-I. -I/usr/lib/perl/5.18.2/CORE/ -fPIC -lvw -lpcrecpp -lperl -pthread -o libVowpalTaggit.so
+	rm -rf VowpalTaggit_wrap.cxx

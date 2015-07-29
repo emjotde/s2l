@@ -10,6 +10,7 @@ class vw;
 
 class VowpalTaggit {
   public:
+    VowpalTaggit();
     VowpalTaggit(const std::string&);
     VowpalTaggit(int argc, char **argv);
     ~VowpalTaggit();

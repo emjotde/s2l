@@ -6,6 +6,8 @@
 #include "Examples.hpp"
 #include "Search.hpp"
 
+VowpalTaggit::VowpalTaggit() : VowpalTaggit("") {}
+
 VowpalTaggit::VowpalTaggit(const std::string& cli)
 : currSent_(nullptr),
   vw_(vwInit(cli)),

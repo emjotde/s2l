@@ -1,8 +1,4 @@
-// File : gd.i
 %module VowpalTaggit
-
-#undef seed
-
 
 %include "std_vector.i"
 %include "std_string.i"
@@ -20,6 +16,7 @@ namespace std {
 class VowpalTaggit {
   public:
     VowpalTaggit();
+    VowpalTaggit(const std::string&);
     
     VowpalTaggit& learn();
     
@@ -35,8 +32,14 @@ class VowpalTaggit {
     VowpalTaggit& ctag(const std::string ctag);
     VowpalTaggit& oracle();
     
-    Sent& getSent();
+    VowpalTaggit& readLine(const std::string& line);
+    VowpalTaggit& save(const std::string& predictor);
+    
+    size_t sentNum();
 };
+
+void mkTrainer(VowpalTaggit&);
+void mkPredictor(VowpalTaggit&);
 
 %perlcode %{
 sub ppredict {
