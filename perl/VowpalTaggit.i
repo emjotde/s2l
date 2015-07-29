@@ -20,6 +20,7 @@ class VowpalTaggit {
     
     VowpalTaggit& learn();
     
+    VowpalTaggit& clearHooks();
     VowpalTaggit& predict(std::vector<int>& output);
     
     VowpalTaggit& bos();
@@ -55,30 +56,34 @@ sub ppredict {
     return @out;
 }
 
-sub XMLTrainer() {
+sub XcesTrainer() {
     my $vt = shift;
     VowpalTaggit::mkTrainer($vt);
     my $xml = XML::Twig->new(
         start_tag_handlers => {
             'chunk[@type="s"]' => sub { $vt->bos(); },
             'tok' => sub { $vt->tok(); },
-            'lex' => sub { $vt->lex(); },
+            'lex' => sub {
+                $vt->lex();
+                $vt->oracle() if($_->{att}->{disamb} == 1);
+            },
         },
-        twig_handlers => {
+        twig_roots => {
             'orth' => sub { $vt->orth($_->trimmed_text()); },
             'base' => sub { $vt->base($_->trimmed_text()); },
             'ctag' => sub { $vt->ctag($_->trimmed_text()); },
-            'lex'  => sub { $vt->oracle() if($_->{att}->{disamb} == 1); },
             'chunk[@type="s"]' => sub { $vt->eos(); $_->purge(); },
         },
     );
     return $xml;
 }
 
-sub XMLPredictor() {
+sub XcesPredictor() {
     my $vt = shift;
-    VowpalTaggit::mkPredictor($vt);
+    $vt->clearHooks();
+    
     my $xml = XML::Twig->new(
+        pretty_print => 'indented',
         start_tag_handlers => {
             'chunk[@type="s"]' => sub { $vt->bos(); },
             'tok' => sub { $vt->tok(); },
@@ -88,8 +93,25 @@ sub XMLPredictor() {
             'orth' => sub { $vt->orth($_->trimmed_text()); },
             'base' => sub { $vt->base($_->trimmed_text()); },
             'ctag' => sub { $vt->ctag($_->trimmed_text()); },
-            'lex'  => sub { $vt->oracle() if($_->{att}->{disamb} == 1); },
-            'chunk[@type="s"]' => sub { $vt->eos(); $_->purge(); },
+            
+            'chunk[@type="s"]' => sub {
+                my ($twig, $s) = @_;
+                $vt->eos();
+            
+                my @predicts = $vt->ppredict();
+            
+                # @TODO: Add new alternatives for unknown words
+                my @toks = $s->children('tok');
+                foreach my $i (0 .. $#toks) {
+                  my @lexemes = $toks[$i]->children('lex');
+                  foreach my $j (0 .. $#lexemes) {
+                    if ($j == $predicts[$i]) {
+                      $lexemes[$j]->{att}->{disamb} = 1;
+                    }
+                  }
+                }
+                $_->flush();
+            },
         },
     );
     return $xml;

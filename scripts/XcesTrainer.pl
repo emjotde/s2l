@@ -16,10 +16,10 @@ GetOptions(
 my $vt = new VowpalTaggit::VowpalTaggit();
 for my $p (1 .. $PASSES) {
     print STDERR "Training pass $p of $PASSES\n";
-    $vt->XMLTrainer()->parsefile($TRAIN_FILE);
+    $vt->XcesTrainer()->parsefile($TRAIN_FILE);
 }
 
 if ($TEST_FILE) {
     binmode(STDOUT, ":utf8");
-    $vt->XMLPredictor()->parsefile($TEST_FILE);
+    $vt->XcesPredictor()->parsefile($TEST_FILE);
 }

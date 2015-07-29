@@ -10,12 +10,12 @@ my $xt = XML::Twig->new(
         'tok' => sub { print "tok\n" },
         'lex' => sub { print "lex\n" },
     },
-    twig_handlers => {
+    twig_roots => {
         'orth' => sub { print "orth\t", $_->trimmed_text(), "\n"; },
         'base' => sub { print "base\t", $_->trimmed_text(), "\n"; },
         'ctag' => sub { print "ctag\t", $_->trimmed_text(), "\n"; },
         'lex'  => sub { print "oracle\n" if($_->{att}->{disamb} == 1); },
-        'chunk[@type="s"]' => sub { print "eos\n"; $c++; if($c % 1000 == 0) { print STDERR "$c\n"; }  },
+        'chunk[@type="s"]' => sub { print "eos\n"; $c++; if($c % 1000 == 0) { print STDERR "$c\n"; } $_->purge(); },
     },
 );
 
