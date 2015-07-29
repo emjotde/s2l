@@ -28,30 +28,16 @@ class VowpalTaggit {
         " --quiet -t ";
     }
     
-    VowpalTaggit& addHook(std::function<void(VowpalTaggit&)> hook) {
-      hooks_.push_back(hook);
-      return *this;
-    }
-    
-    VowpalTaggit& clearHooks() {
-      hooks_.clear();
-      return *this;
-    }
+    VowpalTaggit& addHook(std::function<void(VowpalTaggit&)> hook);
+    VowpalTaggit& clearHooks();
     
     VowpalTaggit& report(std::ostream& o);
   
     VowpalTaggit& learn();
     VowpalTaggit& predict(std::vector<int>& output);
         
-    VowpalTaggit& read(std::istream& in) {
-      std::string line;
-      sentencesLearned_ = 0;
-      while(std::getline(in, line))
-        readLine(line);
-      return *this;
-    }
+    VowpalTaggit& read(std::istream& in);
     VowpalTaggit& readLine(const std::string& line);
-        
     VowpalTaggit& save(const std::string& predictor);
     
     VowpalTaggit& bos();
@@ -64,9 +50,7 @@ class VowpalTaggit {
     VowpalTaggit& oracle();
     
     Sent& getSent();
-    size_t sentNum() {
-      return sentencesLearned_;
-    }
+    size_t sentNum();
   
   // convienience functions
   
@@ -85,3 +69,5 @@ class VowpalTaggit {
     std::vector<std::function<void(VowpalTaggit&)>> hooks_;
 };
 
+void mkTrainer(VowpalTaggit&);
+void mkPredictor(VowpalTaggit&);
