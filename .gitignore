@@ -30,3 +30,4 @@
 trainer
 data
 tagged.*
+perl/*.pm
