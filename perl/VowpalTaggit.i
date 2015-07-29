@@ -42,6 +42,8 @@ void mkTrainer(VowpalTaggit&);
 void mkPredictor(VowpalTaggit&);
 
 %perlcode %{
+use XML::Twig;
+
 sub ppredict {
     my $self = shift;
     my @out;
@@ -52,5 +54,46 @@ sub ppredict {
     }
     return @out;
 }
+
+sub XMLTrainer() {
+    my $vt = shift;
+    VowpalTaggit::mkTrainer($vt);
+    my $xml = XML::Twig->new(
+        start_tag_handlers => {
+            'chunk[@type="s"]' => sub { $vt->bos(); },
+            'tok' => sub { $vt->tok(); },
+            'lex' => sub { $vt->lex(); },
+        },
+        twig_handlers => {
+            'orth' => sub { $vt->orth($_->trimmed_text()); },
+            'base' => sub { $vt->base($_->trimmed_text()); },
+            'ctag' => sub { $vt->ctag($_->trimmed_text()); },
+            'lex'  => sub { $vt->oracle() if($_->{att}->{disamb} == 1); },
+            'chunk[@type="s"]' => sub { $vt->eos(); $_->purge(); },
+        },
+    );
+    return $xml;
+}
+
+sub XMLPredictor() {
+    my $vt = shift;
+    VowpalTaggit::mkPredictor($vt);
+    my $xml = XML::Twig->new(
+        start_tag_handlers => {
+            'chunk[@type="s"]' => sub { $vt->bos(); },
+            'tok' => sub { $vt->tok(); },
+            'lex' => sub { $vt->lex(); },
+        },
+        twig_handlers => {
+            'orth' => sub { $vt->orth($_->trimmed_text()); },
+            'base' => sub { $vt->base($_->trimmed_text()); },
+            'ctag' => sub { $vt->ctag($_->trimmed_text()); },
+            'lex'  => sub { $vt->oracle() if($_->{att}->{disamb} == 1); },
+            'chunk[@type="s"]' => sub { $vt->eos(); $_->purge(); },
+        },
+    );
+    return $xml;
+}
+
 %}
 

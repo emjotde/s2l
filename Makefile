@@ -12,23 +12,23 @@ tagged.xml : tagged.idx
 tagged.idx: trainer data/train01.flat data/test01.flat
 	./trainer --train data/train01.flat --test data/test01.flat --passes 3 > tagged.idx
 
-
-
 ################################################################################
 
-HEADER=VowpalTaggit.hpp libsearch.h Search.hpp Examples.hpp Features.hpp
-IMPLEM=VowpalTaggit.cpp Examples.cpp Features.cpp
+HEADER=src/VowpalTaggit.hpp src/libsearch.h src/Search.hpp src/Examples.hpp src/Features.hpp
+IMPLEM=src/VowpalTaggit.cpp src/Examples.cpp src/Features.cpp
 
 trainer: trainer.cpp $(IMPLEM) $(HEADER)
-	g++ trainer.cpp $(IMPLEM) -std=c++11 -g -O2 -lvw -lpcrecpp -lboost_program_options -o $@
+	g++ src/trainer.cpp $(IMPLEM) -std=c++11 -g -O3 -lvw -lpcrecpp -lboost_program_options -o $@
+
+swig: perl/libVowpalTaggit.so
+
+perl/libVowpalTaggit.so: $(IMPLEM) $(HEADER) perl/VowpalTaggit.i
+	swig -perl5 -c++ perl/VowpalTaggit.i
+	perl -i -pe 's/#include <algorithm>/#undef seed\n#include <algorithm>/' perl/VowpalTaggit_wrap.cxx
+	g++ -shared -g -O3 -std=c++11 perl/VowpalTaggit_wrap.cxx $(IMPLEM) -w \
+	-I. -Isrc -I/usr/lib/perl/5.18.2/CORE/ -fPIC -lvw -lpcrecpp -lperl -pthread -o perl/libVowpalTaggit.so
+	rm -rf perl/VowpalTaggit_wrap.cxx
 
 clean:
-	rm -rf trainer tagged.xml tagged.idx tagged.accuracy
+	rm -rf trainer tagged.xml tagged.idx tagged.accuracy perl/*.so perl/*.pm
 
-swig:
-	cd perl
-	swig -perl5 -c++ VowpalTaggit.i
-	perl -i -pe 's/#include <algorithm>/#undef seed\n#include <algorithm>/' VowpalTaggit_wrap.cxx
-	g++ -shared -std=c++11 VowpalTaggit_wrap.cxx VowpalTaggit.cpp libsearch.h -w \
-	-I. -I/usr/lib/perl/5.18.2/CORE/ -fPIC -lvw -lpcrecpp -lperl -pthread -o libVowpalTaggit.so
-	rm -rf VowpalTaggit_wrap.cxx
