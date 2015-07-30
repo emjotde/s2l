@@ -17,12 +17,16 @@ struct Feature {
     return name < o.name;
   }
   
+  bool operator==(const Feature& o) const {
+    return name == o.name;
+  }
+  
   std::string name;
   double weight;
 };
 
 typedef char Namespace;
-typedef std::set<Feature> Features;
+typedef std::vector<Feature> Features;
 typedef std::map<Namespace, Features> FeatureNS;
 
 class Morfs {
@@ -255,7 +259,7 @@ class Tok {
         ff(*this);
     }
     
-    Sent& getSentence() {
+    Sent& getSent() {
       return parent_;
     }
     

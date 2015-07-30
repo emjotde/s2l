@@ -16,7 +16,7 @@ tagged.idx: trainer data/train01.flat data/test01.flat
 ################################################################################
 
 HEADER=src/VowpalTaggit.hpp src/libsearch.h src/Search.hpp src/Examples.hpp src/Features.hpp src/StaticData.hpp
-IMPLEM=src/VowpalTaggit.cpp src/Examples.cpp src/Features.cpp src/StaticData.cpp
+IMPLEM=src/VowpalTaggit.cpp src/Examples.cpp src/Features.cpp src/StaticData.cpp src/Search.cpp
 
 trainer: src/trainer.cpp $(IMPLEM) $(HEADER)
 	g++ src/trainer.cpp $(IMPLEM) -std=c++11 -g -O3 -lvw -lpcrecpp -lboost_program_options -o $@
