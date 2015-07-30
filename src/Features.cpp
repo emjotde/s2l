@@ -3,15 +3,13 @@
 #include <fstream>
 #include <vector>
 #include <pcrecpp.h>
-#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string.hpp>  
 
+#include "StaticData.hpp"
 #include "Features.hpp"
 #include "Examples.hpp"
 
 namespace FF {
-
-const size_t WINDOW = 2;
-const size_t AFFIX = 4;
 
 // Classes
 
@@ -87,9 +85,11 @@ void meFeatures() {
     tok.getNamespace()['s'].insert("w^" + tok.getOrth());
   });
 
-  //Tok::FF([](Tok& tok) {
-  //  tok.getNamespace()['s'].insert("lc^" + tok.getOrth().tolower());
-  //});
+  Tok::FF([](Tok& tok) {
+    std::string orth = tok.getOrth();
+    boost::to_lower(orth);
+    tok.getNamespace()['s'].insert("lc^" + orth);
+  });
 
   // word length
   Tok::FF([](Tok& tok) {
@@ -115,11 +115,15 @@ void meFeatures() {
         tok.getNamespace()['s'].insert("r^" + r.first);
   });
 
-  // prefixes and suffixes of length up to 4
-  Tok::FF([=](Tok& tok) {
-    for(size_t i = 1; i < std::min(tok.getOrth().size(), AFFIX); i++) {
+  Tok::FF([](Tok& tok) {
+    for(size_t i = 1; i < std::min(tok.getOrth().size(), StaticData::Get<size_t>("affix")); i++) {
+      // prefixes and suffixes
       tok.getNamespace()['s'].insert("pref^" + tok.getOrth().substr(0, i));
       tok.getNamespace()['s'].insert("suff^" + tok.getOrth().substr(tok.getOrth().size()-i));
+
+      // complements of prefixes and suffixes
+      tok.getNamespace()['s'].insert("cpref^" + tok.getOrth().substr(i));
+      tok.getNamespace()['s'].insert("csuff^" + tok.getOrth().substr(0, tok.getOrth().size()-i));
     }
   });
   
@@ -127,7 +131,7 @@ void meFeatures() {
   Tok::FF([=](Tok& tok) {
     Sent& s = tok.getSentence();
     size_t i = tok.getI();
-    for(size_t j = 1; j <= WINDOW; ++j) {
+    for(size_t j = 1; j <= StaticData::Get<size_t>("window"); ++j) {
       tok.getNamespace()['s'].insert(
         "pw" + std::to_string(j) + "^"
         + (i >= j ? s[i - j].getOrth() : "<s>" )
@@ -144,7 +148,7 @@ void meFeatures() {
   Tok::FF([=](Tok& tok) {
     Sent& s = tok.getSentence();
     size_t i = tok.getI();
-    for(size_t j = 1; j <= WINDOW; ++j) {
+    for(size_t j = 1; j <= StaticData::Get<size_t>("window"); ++j) {
       tok.getNamespace()['s'].insert(
         "nw" + std::to_string(j) + "^"
         + (i + j < s.size() ? s[i + j].getOrth() : "</s>" )
@@ -173,8 +177,8 @@ void ngramFeatures() {
     std::string png = tok.getOrth();
     std::string nng = tok.getOrth();
     std::string cng = tok.getOrth();
-    for(size_t j = 1; j <= WINDOW; ++j) {
-      if(j <= WINDOW/2) {
+    for(size_t j = 1; j <= StaticData::Get<size_t>("window"); ++j) {
+      if(j <= StaticData::Get<size_t>("window")/2) {
         cng = (i >= j ? s[i - j].getOrth() : "<s>") + "_" + cng +
             "_" + (i + j < s.size() ? s[i + j].getOrth() : "</s>");
         tok.getNamespace()['s'].insert("cng^" + cng);
@@ -192,7 +196,7 @@ void tagFeatures() {
   Tok::FF([=](Tok& tok) {
     Sent& s = tok.getSentence();
     size_t i = tok.getI();
-    for(size_t j = 1; j <= WINDOW; ++j) {
+    for(size_t j = 1; j <= StaticData::Get<size_t>("window"); ++j) {
       if(i >= j) {
         for(auto& lex : s[i - j]) {
           tok.getNamespace()['s'].insert("pot" + std::to_string(j) + "^" + lex.getCtag());    
@@ -210,7 +214,7 @@ void tagFeatures() {
   Tok::FF([=](Tok& tok) {
     Sent& s = tok.getSentence();
     size_t i = tok.getI();
-    for(size_t j = 1; j <= WINDOW; ++j) {
+    for(size_t j = 1; j <= StaticData::Get<size_t>("window"); ++j) {
       if(i + j < s.size()) { 
         for(auto& lex : s[i + j]) {
           tok.getNamespace()['s'].insert("not" + std::to_string(j) + "^" + lex.getCtag());    
@@ -253,7 +257,7 @@ void lfdFeatures() {
     std::set<std::string> frags;
     boost::split(frags, lex.getCtag(), boost::is_any_of(":"));
     
-    for(size_t j = 1; j <= WINDOW; ++j) {
+    for(size_t j = 1; j <= StaticData::Get<size_t>("window"); ++j) {
       if(i >= j) {
         for(auto& lex2 : s[i - j]) {
           if(lex.getCtag() == lex2.getCtag()) {
@@ -280,7 +284,7 @@ void lfdFeatures() {
     std::set<std::string> frags;
     boost::split(frags, lex.getCtag(), boost::is_any_of(":"));
     
-    for(size_t j = 1; j <= WINDOW; ++j) {
+    for(size_t j = 1; j <= StaticData::Get<size_t>("window"); ++j) {
       if(i + j < s.size()) {
         for(auto& lex2 : s[i + j]) {
           if(lex.getCtag() == lex2.getCtag()) {
@@ -301,36 +305,43 @@ void lfdFeatures() {
 }
 
 void embeddingFeatures() {
-  Embeddings em("data/pl.vectors");
-  Tok::FF([=](Tok& tok) {
-    em.addEmbeddings(tok);
-  });
+  if(StaticData::Has("embeddings")) {
+    std::shared_ptr<Embeddings>
+    em(new Embeddings(StaticData::Get<std::string>("embeddings")));
+    
+    Tok::FF([=](Tok& tok) {
+      em->addEmbeddings(tok);
+    });
+  }
 }
 
 void classFeatures() {
-  Classes cls("data/pl.classes");
-
-  Tok::FF([=](Tok& tok) {
-    tok.getNamespace()['c'].insert("cls^" + cls.getClass(tok.getOrth()));
-
-    Sent& s = tok.getSentence();
-    size_t i = tok.getI();
-
-    for(size_t j = 1; j <= WINDOW; ++j) {
-      tok.getNamespace()['c'].insert(
-        "clsp" + std::to_string(j) + "^"
-        + (i >= j ? cls.getClass(s[i - j].getOrth()) : cls.getClass("<s>") )
-      );
-    }
-
-    for(size_t j = 1; j <= WINDOW; ++j) {
-      tok.getNamespace()['c'].insert(
-        "clsn" + std::to_string(j) + "^"
-        + (i + j < s.size() ? cls.getClass(s[i + j].getOrth()) : cls.getClass("</s>") )
-      );
-    }
+  if(StaticData::Has("classes")) {
+    std::shared_ptr<Classes>
+    cls(new Classes(StaticData::Get<std::string>("classes")));
     
-  });
+    Tok::FF([=](Tok& tok) {
+      tok.getNamespace()['c'].insert("cls^" + cls->getClass(tok.getOrth()));
+  
+      Sent& s = tok.getSentence();
+      size_t i = tok.getI();
+  
+      for(size_t j = 1; j <= StaticData::Get<size_t>("window"); ++j) {
+        tok.getNamespace()['c'].insert(
+          "clsp" + std::to_string(j) + "^"
+          + (i >= j ? cls->getClass(s[i - j].getOrth()) : cls->getClass("<s>") )
+        );
+      }
+  
+      for(size_t j = 1; j <= StaticData::Get<size_t>("window"); ++j) {
+        tok.getNamespace()['c'].insert(
+          "clsn" + std::to_string(j) + "^"
+          + (i + j < s.size() ? cls->getClass(s[i + j].getOrth()) : cls->getClass("</s>") )
+        );
+      }
+      
+    });
+  }
 }
 
 void printFeatures() {
@@ -365,8 +376,8 @@ void registerFeatures() {
   embeddingFeatures();
   classFeatures();
   
-  // For debugging 
-  //printFeatures();
+  if(StaticData::Get<bool>("debug"))
+    printFeatures();
 }
 
 }

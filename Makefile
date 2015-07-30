@@ -10,12 +10,13 @@ tagged.xml : tagged.idx
 	cat $^ | perl scripts/vw2ces.pl -i ../../PL/folds/testana/test01.xml > $@
 
 tagged.idx: trainer data/train01.flat data/test01.flat
-	./trainer --train data/train01.flat --test data/test01.flat --passes 4 > tagged.idx
+	./trainer --train data/train01.flat --test data/test01.flat \
+	--passes 4 --model model.weights > tagged.idx
 
 ################################################################################
 
-HEADER=src/VowpalTaggit.hpp src/libsearch.h src/Search.hpp src/Examples.hpp src/Features.hpp
-IMPLEM=src/VowpalTaggit.cpp src/Examples.cpp src/Features.cpp
+HEADER=src/VowpalTaggit.hpp src/libsearch.h src/Search.hpp src/Examples.hpp src/Features.hpp src/StaticData.hpp
+IMPLEM=src/VowpalTaggit.cpp src/Examples.cpp src/Features.cpp src/StaticData.cpp
 
 trainer: src/trainer.cpp $(IMPLEM) $(HEADER)
 	g++ src/trainer.cpp $(IMPLEM) -std=c++11 -g -O3 -lvw -lpcrecpp -lboost_program_options -o $@

@@ -15,13 +15,12 @@ class VowpalTaggit {
     VowpalTaggit(int argc, char **argv);
     ~VowpalTaggit();
   
-    static vw* vwInit(std::string);
-    static vw* vwInit(int argc, char **argv);
+    static vw* vwInit();
   
     static std::string vwTrainString() {
       return
         " --quiet --csoaa_ldf mc --search 0 --search_task hook"
-        " -b 28 -q t:";
+        " -b 26 -q t:";
     }
     
     static std::string vwTestString() {
@@ -45,9 +44,9 @@ class VowpalTaggit {
     VowpalTaggit& eos();
     VowpalTaggit& tok();
     VowpalTaggit& lex();
-    VowpalTaggit& orth(const std::string orth);
-    VowpalTaggit& base(const std::string base);
-    VowpalTaggit& ctag(const std::string ctag);
+    VowpalTaggit& orth(const std::string& orth);
+    VowpalTaggit& base(const std::string& base);
+    VowpalTaggit& ctag(const std::string& ctag);
     VowpalTaggit& oracle();
     
     Sent& getSent();

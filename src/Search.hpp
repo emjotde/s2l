@@ -8,6 +8,7 @@
 #include <map>
 #include <sstream>
 
+#include "StaticData.hpp"
 #include "Examples.hpp"
 #include "libsearch.h"
 
@@ -76,19 +77,19 @@ class SequenceLabeler : public SearchTask<Sent, vector<int>> {
   void _run(Search::search& sch, Sent& sentence, vector<int>& output) {
     output.clear();
     
-    const size_t hl = 3;
+    const size_t history_length = StaticData::Get<size_t>("history_length");
     
     for(size_t i = 0; i < sentence.size(); i++) {
-      AddConditions(sentence, output, i, hl);
+      AddConditions(sentence, output, i, history_length);
       
       Morfs& morfs = sentence[i].morfs();
       action p = Search::predictor(sch, i + 1)
         .set_input(morfs.data(), morfs.size())
         .set_oracle(morfs.oracle())
-        .add_condition_range(i, hl, hns)
+        .add_condition_range(i, history_length, hns)
         .predict();
       
-      StripConditions(sentence, i, hl);
+      StripConditions(sentence, i, history_length);
       output.push_back(p);
     }
   }
