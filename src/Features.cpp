@@ -300,7 +300,41 @@ void lfdFeatures() {
 
 }
 
+void embeddingFeatures() {
+  Embeddings em("data/pl.vectors");
+  Tok::FF([=](Tok& tok) {
+    em.addEmbeddings(tok);
+  });
+}
+
+void classFeatures() {
+  Classes cls("data/pl.classes");
+
+  Tok::FF([=](Tok& tok) {
+    tok.getNamespace()['c'].insert("cls^" + cls.getClass(tok.getOrth()));
+
+    Sent& s = tok.getSentence();
+    size_t i = tok.getI();
+
+    for(size_t j = 1; j <= WINDOW; ++j) {
+      tok.getNamespace()['c'].insert(
+        "clsp" + std::to_string(j) + "^"
+        + (i >= j ? cls.getClass(s[i - j].getOrth()) : cls.getClass("<s>") )
+      );
+    }
+
+    for(size_t j = 1; j <= WINDOW; ++j) {
+      tok.getNamespace()['c'].insert(
+        "clsn" + std::to_string(j) + "^"
+        + (i + j < s.size() ? cls.getClass(s[i + j].getOrth()) : cls.getClass("</s>") )
+      );
+    }
+    
+  });
+}
+
 void printFeatures() {
+  
   auto printNs = [](FeatureNS& fns) {
     for(auto& ns : fns) {
       std::cerr << ns.first << " : ";
@@ -319,42 +353,7 @@ void printFeatures() {
   Lex::FF([=](Lex& lex) {
     printNs(lex.getNamespace());
   });
-}
-
-void embeddingFeatures() {
-  Embeddings em("data/pl.vectors");
-  Tok::FF([=](Tok& tok) {
-    em.addEmbeddings(tok);
-  });
-}
-
-void classFeatures() {
-  Classes cls("data/pl.classes");
-  Tok::FF([=](Tok& tok) {
-    tok.getNamespace()['c'].insert("cls^" + cls.getClass(tok.getOrth()));
-  });
-  
-  Tok::FF([=](Tok& tok) {
-    Sent& s = tok.getSentence();
-    size_t i = tok.getI();
-    for(size_t j = 1; j <= WINDOW; ++j) {
-      tok.getNamespace()['c'].insert(
-        "clsp" + std::to_string(j) + "^"
-        + (i >= j ? cls.getClass(s[i - j].getOrth()) : cls.getClass("<s>") )
-      );
-    }
-  });
-  
-  Tok::FF([=](Tok& tok) {
-    Sent& s = tok.getSentence();
-    size_t i = tok.getI();
-    for(size_t j = 1; j <= WINDOW; ++j) {
-      tok.getNamespace()['c'].insert(
-        "clsn" + std::to_string(j) + "^" + (i + j < s.size() ? cls.getClass(s[i + j].getOrth())
-                                                             : cls.getClass("</s>") )
-      );
-    }
-  });
+ 
 }
 
 void registerFeatures() {
@@ -363,7 +362,7 @@ void registerFeatures() {
   tagFeatures();
   lfdFeatures();
 
-  //embeddingFeatures();
+  embeddingFeatures();
   classFeatures();
   
   // For debugging 

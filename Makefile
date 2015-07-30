@@ -10,7 +10,7 @@ tagged.xml : tagged.idx
 	cat $^ | perl scripts/vw2ces.pl -i ../../PL/folds/testana/test01.xml > $@
 
 tagged.idx: trainer data/train01.flat data/test01.flat
-	./trainer --train data/train01.flat --test data/test01.flat --passes 3 > tagged.idx
+	./trainer --train data/train01.flat --test data/test01.flat --passes 4 > tagged.idx
 
 ################################################################################
 
