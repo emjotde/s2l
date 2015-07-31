@@ -24,8 +24,8 @@ VowpalTaggit::~VowpalTaggit() {
 vw* VowpalTaggit::vwInit() { 
   std::stringstream vwSS;
   std::string vwString;
-  if(StaticData::Has("vw_args"))
-    vwString = StaticData::Get<std::string>("vw_args");
+  if(StaticData::Has("vw-args"))
+    vwString = StaticData::Get<std::string>("vw-args");
   if(StaticData::Has("train"))
     vwSS << vwTrainString(vwString);
   else
@@ -103,6 +103,10 @@ VowpalTaggit& VowpalTaggit::readLine(const std::string& line) {
 VowpalTaggit& VowpalTaggit::save(const std::string& predictor) {
   VW::save_predictor(*vw_, predictor);
 }
+
+//VowpalTaggit& VowpalTaggit::load(const std::string& predictor) {
+//  VW::load_predictor(*vw_, predictor);
+//}
 
 VowpalTaggit& VowpalTaggit::bos() {
   if(currSent_ != nullptr)

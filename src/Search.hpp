@@ -19,7 +19,7 @@ class SequenceLabeler : public SearchTask<Sent, History> {
     
   SequenceLabeler(vw* vw_obj)
       : SearchTask<Sent, History>(*vw_obj) { 
-    sch.set_options( Search::AUTO_HAMMING_LOSS /*| Search::NO_CACHING*/ | Search::IS_LDF );
+    sch.set_options( Search::AUTO_HAMMING_LOSS | Search::NO_CACHING | Search::IS_LDF );
   }
   
   void AddConditions(Tok& tok, Lex& prev, char ns) {
@@ -76,7 +76,7 @@ class SequenceLabeler : public SearchTask<Sent, History> {
   void _run(Search::search& sch, Sent& sentence, History& output) {
     output.clear();
     
-    const size_t history_length = StaticData::Get<size_t>("history_length");
+    const size_t history_length = StaticData::Get<size_t>("history-length");
     
     for(size_t i = 0; i < sentence.size(); i++) {
       AddConditions(sentence, output, i, history_length);

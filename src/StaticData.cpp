@@ -24,23 +24,25 @@ StaticData& StaticData::NonStaticInit(int argc, char** argv) {
   
   po::options_description general("General options");
   general.add_options()
-    ("vw_args", po::value<std::string>(),
+    ("vw-args", po::value<std::string>(),
      "Options passed on to Vowpal Wabbit instance")
     ("train", po::value<std::string>(),
      "Path to training data")
     ("test", po::value<std::string>(),
      "Path to test data")
-    ("model", po::value<std::string>(),
+    ("final-model", po::value<std::string>(),
      "Path to final model")
     ("passes,p", po::value<size_t>()->default_value(1),
      "Number of training passes")
+    ("save-per-pass", po::value<bool>()->zero_tokens()->default_value(false),
+     "Save model after each pass - requires passes > 1 and --final-model")
     ("help,h", po::value<bool>()->zero_tokens()->default_value(false),
      "Print this help message and exit")
   ;
 
   po::options_description search("Search options");
   search.add_options()
-    ("history_length", po::value<size_t>()->default_value(3),
+    ("history-length", po::value<size_t>()->default_value(3),
      "History length for Learning to Search algorithm")
   ;
 
@@ -66,19 +68,33 @@ StaticData& StaticData::NonStaticInit(int argc, char** argv) {
   try { 
     po::store(po::command_line_parser(argc,argv).options(cmdline_options).run(), vm_);
     po::notify(vm_);
+    
+    PrintConfig();
   }
   catch (std::exception& e) {
     std::cerr << "Error: " << e.what() << std::endl << std::endl;
     
     std::cerr << "Usage: " + std::string(argv[0]) +  " [options]" << std::endl;
     std::cerr << cmdline_options << std::endl;
-    exit(0);
+    exit(1);
   }
   
   if (Get<bool>("help")) {
     std::cerr << "Usage: " + std::string(argv[0]) +  " [options]" << std::endl;
     std::cerr << cmdline_options << std::endl;
     exit(0);
+  }
+  
+  if(Has("save-per-pass") && !Has("final-model")) {
+    std::cerr << "You need to specify final model name if you want to save "
+                 "intermediate models per pass." << std::endl;
+    exit(1);    
+  }
+  
+  if(Has("save-per-pass") && Get<size_t>("passes") <= 1) {
+    std::cerr << "For save-per-pass the number of passes needs to be greater than 1."
+              << std::endl;
+    exit(1);    
   }
   
   return *this;

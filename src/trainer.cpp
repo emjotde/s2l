@@ -20,6 +20,18 @@ int main(int argc, char **argv) {
       std::cerr << "Starting pass " << (i+1) << "/" << passes << std::endl;
       std::ifstream train(trainFile.c_str());
       vt(train);
+      
+      if(StaticData::Has("final-model") &&
+         StaticData::Get<bool>("save-per-pass") && passes > 1) {
+        std::string modelFile = StaticData::Get<std::string>("final-model");
+        std::string perPassModelFile = modelFile + "." + std::to_string(i+1);
+        vt.save(perPassModelFile);
+      }
+    }
+    
+    if(StaticData::Has("final-model")) {
+      std::string modelFile = StaticData::Get<std::string>("final-model");
+      vt.save(modelFile);
     }
   }
   
@@ -30,8 +42,6 @@ int main(int argc, char **argv) {
     vt(test);
   }
   
-  if(StaticData::Has("model")) {
-    std::string modelFile = StaticData::Get<std::string>("model");
-    vt.save(modelFile);
-  }
+  
+  return 0;
 }

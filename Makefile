@@ -11,7 +11,7 @@ tagged.xml : tagged.idx
 
 tagged.idx: trainer data/train01.flat data/test01.flat
 	./trainer --train data/train01.flat --test data/test01.flat \
-	--passes 1 --history_length 1 --window 1 --model model.weights > tagged.idx
+	--passes 3 --save-per-pass --final-model model.weights > tagged.idx
 
 ################################################################################
 
@@ -19,7 +19,7 @@ HEADER=src/VowpalTaggit.hpp src/libsearch.h src/Search.hpp src/Examples.hpp src/
 IMPLEM=src/VowpalTaggit.cpp src/Examples.cpp src/Features.cpp src/StaticData.cpp src/Search.cpp
 
 trainer: src/trainer.cpp $(IMPLEM) $(HEADER)
-	g++ src/trainer.cpp $(IMPLEM) -std=c++11 -O3 -march=native -fno-align-functions -fno-align-loops -lvw -lpcrecpp -lboost_program_options -o $@
+	g++ src/trainer.cpp $(IMPLEM) -std=c++11 -O3 -Ofast -march=native -fno-align-functions -fno-align-loops -lvw -lpcrecpp -lboost_program_options -o $@
 
 swig: perl/libVowpalTaggit.so
 

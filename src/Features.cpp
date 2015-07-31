@@ -96,8 +96,6 @@ void meFeatures() {
     tok.getNamespace()['s'].emplace_back("length^" + std::to_string(tok.getOrth().size()));
   });
 
-  /*
-
   pcrecpp::RE_Options options;
   options.set_utf8(true);
   std::map<std::string, pcrecpp::RE> regexes;
@@ -162,7 +160,6 @@ void meFeatures() {
       }
     }
   });
-  */
 }
 
 void ngramFeatures() {
@@ -372,8 +369,8 @@ void printFeatures() {
 
 void registerFeatures() {
   meFeatures();
-  //ngramFeatures();
-  //tagFeatures();
+  ngramFeatures();
+  tagFeatures();
   lfdFeatures();
 
   embeddingFeatures();

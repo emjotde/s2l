@@ -25,7 +25,7 @@ class VowpalTaggit {
     
     static std::string vwTestString(const std::string& vwString) {
       return
-        " --quiet -t " + vwString;
+        " --quiet -t -q t: " + vwString;
     }
     
     VowpalTaggit& addHook(std::function<void(VowpalTaggit&)> hook);

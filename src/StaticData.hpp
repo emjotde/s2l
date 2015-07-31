@@ -21,7 +21,21 @@ class StaticData {
     static T Get(const std::string& key) {
       return instance_.vm_[key].as<T>();
     }
-        
+    
+    static void PrintConfig() {
+      PrintConfig(std::cerr);
+    }
+    
+    static void PrintConfig(std::ostream& out) {
+      for(auto& entry: instance_.vm_) {
+        out << entry.first << " = ";
+        try { out << entry.second.as<std::string>(); } catch(...) { }
+        try { out << entry.second.as<size_t>(); } catch(...) { }
+        try { out << entry.second.as<bool>(); } catch(...) { }
+        out << std::endl;
+      }
+    }
+    
   private:
     StaticData& NonStaticInit(int argc, char** argv);
     
