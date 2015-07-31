@@ -17,15 +17,15 @@ class VowpalTaggit {
   
     static vw* vwInit();
   
-    static std::string vwTrainString() {
+    static std::string vwTrainString(const std::string& vwString) {
       return
         " --quiet --csoaa_ldf mc --search 0 --search_task hook"
-        " -b 26 -q t:";
+        " -b 26 -q t: " + vwString;
     }
     
-    static std::string vwTestString() {
+    static std::string vwTestString(const std::string& vwString) {
       return
-        " --quiet -t ";
+        " --quiet -t " + vwString;
     }
     
     VowpalTaggit& addHook(std::function<void(VowpalTaggit&)> hook);

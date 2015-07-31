@@ -23,10 +23,13 @@ VowpalTaggit::~VowpalTaggit() {
 
 vw* VowpalTaggit::vwInit() { 
   std::stringstream vwSS;
-  if(StaticData::Has("testing"))
-    vwSS << vwTestString();
+  std::string vwString;
+  if(StaticData::Has("vw_args"))
+    vwString = StaticData::Get<std::string>("vw_args");
+  if(StaticData::Has("train"))
+    vwSS << vwTrainString(vwString);
   else
-    vwSS << vwTrainString();
+    vwSS << vwTestString(vwString);
   std::cerr << vwSS.str() << std::endl;
   return VW::initialize(vwSS.str());
 }

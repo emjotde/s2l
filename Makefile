@@ -11,7 +11,7 @@ tagged.xml : tagged.idx
 
 tagged.idx: trainer data/train01.flat data/test01.flat
 	./trainer --train data/train01.flat --test data/test01.flat \
-	--passes 4 --model model.weights > tagged.idx
+	--passes 1 --history_length 1 --window 1 --model model.weights > tagged.idx
 
 ################################################################################
 

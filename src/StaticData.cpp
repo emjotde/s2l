@@ -24,6 +24,8 @@ StaticData& StaticData::NonStaticInit(int argc, char** argv) {
   
   po::options_description general("General options");
   general.add_options()
+    ("vw_args", po::value<std::string>(),
+     "Options passed on to Vowpal Wabbit instance")
     ("train", po::value<std::string>(),
      "Path to training data")
     ("test", po::value<std::string>(),
