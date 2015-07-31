@@ -19,59 +19,8 @@ class SequenceLabeler : public SearchTask<Sent, History> {
     
   SequenceLabeler(vw* vw_obj)
       : SearchTask<Sent, History>(*vw_obj) { 
-    sch.set_options( Search::AUTO_HAMMING_LOSS | Search::NO_CACHING | Search::IS_LDF );
-    //bla();
+    sch.set_options( Search::AUTO_HAMMING_LOSS /*| Search::NO_CACHING*/ | Search::IS_LDF );
   }
-
-  
-  //void bla() {
-  //  size_t hl = StaticData::Get<size_t>("history_length");    
-  //  
-  //  // Copy all ldf features from history up to history_length
-  //  hooks_.push_back(
-  //    [=](Lex& lex, History& h, Features& features) {
-  //      size_t i = lex.getTok().getI();
-  //      Sent& s  = lex.getTok().getSent();
-  //      
-  //      std::set<Feature> lexF(lex.getNamespace()['t'].begin(), lex.getNamespace()['t'].end());
-  //      
-  //      for(int j = 0; j < h.size() && j < hl; j++) {
-  //        size_t k = h.size() - j - 1;
-  //        Lex& prevLex = s[k][h[k]];
-  //        for(auto& f: prevLex.getNamespace()['t']) {
-  //          features.emplace_back("h" + std::to_string(j) + "^" + f.name);
-  //          if(lexF.count(f))
-  //            features.emplace_back("mh" + std::to_string(j) + "^" + f.name);
-  //        }
-  //      }
-  //    }
-  //  );
-
-    
-    // Copy all ldf features from history beginning at history_length
-    //SequenceLabeler::FF(
-    //  [](Lex& lex, History& h, Features& features) {
-    //    size_t i = lex.getTok().getI();
-    //    Sent& s  = lex.getTok().getSent();
-    //    size_t hl = StaticData::Get<size_t>("history_length");
-    //    for(int j = hl; j < h.size(); j++) {
-    //      size_t k = h.size() - j - 1;
-    //      Lex& prevLex = sent[k][h[k]];
-    //      for(auto& f: prevLex.getNamespace()['t'])
-    //        features.insert("h" + std::to_string(j) + "^" + f.name);
-    //    }
-    //  }
-    //);
-  //}
-  
-  //void AddConditionalFeatures(Tok& tok, History& history) {
-  //  for(size_t i = 0; i < tok.size(); ++i) {
-  //    FeatureNS temp;
-  //    for(auto& f: hooks_)
-  //      f(tok[i], history, temp[hns_]);
-  //    tok.nsToExample(&tok.morfs()[i], temp);
-  //  }
-  //}
   
   void AddConditions(Tok& tok, Lex& prev, char ns) {
     for(size_t i = 0; i < tok.size(); ++i) {
@@ -82,16 +31,13 @@ class SequenceLabeler : public SearchTask<Sent, History> {
       for(auto& f : prev.getNamespace()['t']) {
         tempF.emplace_back(f.name);
         if(std::binary_search(lexF.begin(), lexF.end(), f))
-          tempF.emplace_back(f.name + "=" + f.name);
-        //for(auto& g: tok[i].getNamespace()['t'])
-        // temp[ns].insert(g.name + "*" + f.name);
+          tempF.emplace_back("m^" + f.name);
       }
       tok.nsToExample(&tok.morfs()[i], temp);
     }
   }
   
-  void AddConditions(Sent& sentence, std::vector<int>& output,
-                     size_t i, size_t hl) {
+  void AddConditions(Sent& sentence, History& output, size_t i, size_t hl) {
     for(size_t j = 0; j < hl; j++) {
       if(i > j) {
         int prev = output[i - j - 1];
@@ -126,9 +72,6 @@ class SequenceLabeler : public SearchTask<Sent, History> {
         StripConditions(sentence[i], hns_ + j);
     }
   }
-  //void StripConditions(Sent& sentence, size_t i, size_t hl) {
-  //  StripConditions(sentence[i], hns_);
-  //}
   
   void _run(Search::search& sch, Sent& sentence, History& output) {
     output.clear();
@@ -136,7 +79,6 @@ class SequenceLabeler : public SearchTask<Sent, History> {
     const size_t history_length = StaticData::Get<size_t>("history_length");
     
     for(size_t i = 0; i < sentence.size(); i++) {
-      //AddConditionalFeatures(sentence[i], output);
       AddConditions(sentence, output, i, history_length);
       
       Morfs& morfs = sentence[i].morfs();
