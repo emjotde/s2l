@@ -19,7 +19,9 @@ HEADER=src/VowpalTaggit.hpp src/libsearch.h src/Search.hpp src/Examples.hpp src/
 IMPLEM=src/VowpalTaggit.cpp src/Examples.cpp src/Features.cpp src/StaticData.cpp src/Search.cpp
 
 trainer: src/trainer.cpp $(IMPLEM) $(HEADER)
-	g++ src/trainer.cpp $(IMPLEM) -std=c++11 -O3 -Ofast -march=native -fno-align-functions -fno-align-loops -lvw -lpcrecpp -lboost_program_options -o $@
+	g++ src/trainer.cpp $(IMPLEM) -std=c++11 -O3 -Ofast -march=native \
+	 -fno-align-functions -fno-align-loops -lvw -lpcrecpp \
+	 -lboost_program_options -o $@
 
 swig: perl/libVowpalTaggit.so
 

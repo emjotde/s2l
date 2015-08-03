@@ -13,6 +13,8 @@ GetOptions(
   "p|passes=i" => \$PASSES,  
 );
 
+VowpalTaggit::StaticData::Init("");
+
 my $vt = new VowpalTaggit::VowpalTaggit();
 for my $p (1 .. $PASSES) {
     print STDERR "Training pass $p of $PASSES\n";

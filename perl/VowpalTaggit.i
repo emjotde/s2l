@@ -10,8 +10,21 @@ namespace std {
 
 %{
 #include "VowpalTaggit.hpp"
+#include "StaticData.hpp"
 %}
 
+class StaticData {
+  public:
+    static StaticData& Init(const std::string&);
+    static bool Has(const std::string& key);
+    template <typename T>
+    static T Get(const std::string& key);
+
+};
+
+%template(GetInt)    StaticData::Get<size_t>;
+%template(GetBool)    StaticData::Get<bool>;
+%template(GetString) StaticData::Get<std::string>;
 
 class VowpalTaggit {
   public:
