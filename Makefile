@@ -3,14 +3,15 @@ all: tagged.accuracy
 .DELETE_ON_ERROR:
 
 tagged.accuracy: tagged.xml
-	PYTHONIOENCODING=utf8 python ../../PL/tools/corpus2/utils/tagger-eval.py \
-	tagged.xml ../../PL/folds/test01.xml | tee $@ | grep AVG
+	PYTHONIOENCODING=utf8 python ../corpus2/utils/tagger-eval.py \
+	tagged.xml data/test01disamb.xml | tee $@ | grep AVG
 
 tagged.xml : tagged.idx
-	cat $^ | perl scripts/vw2ces.pl -i ../../PL/folds/testana/test01.xml > $@
+	cat $^ | perl scripts/vw2ces.pl -i data/test01.xml > $@
 
 tagged.idx: trainer data/train01.flat data/test01.flat
 	./trainer --train data/train01.flat --test data/test01.flat \
+	--window 2 --history-length 5 --classes data/pl.classes \
 	--passes 3 --save-per-pass --final-model model.weights > tagged.idx
 
 ################################################################################
@@ -19,7 +20,8 @@ HEADER=src/VowpalTaggit.hpp src/libsearch.h src/Search.hpp src/Examples.hpp src/
 IMPLEM=src/VowpalTaggit.cpp src/Examples.cpp src/Features.cpp src/StaticData.cpp src/Search.cpp
 
 trainer: src/trainer.cpp $(IMPLEM) $(HEADER)
-	g++ src/trainer.cpp $(IMPLEM) -std=c++11 -O3 -Ofast -march=native -fno-align-functions -fno-align-loops -lvw -lpcrecpp -lboost_program_options -o $@
+	g++ src/trainer.cpp $(IMPLEM) -std=c++11 -O3 -Ofast -march=native \
+	 -fno-align-functions -fno-align-loops -lvw -lpcrecpp -lboost_program_options -o $@
 
 swig: perl/libVowpalTaggit.so
 
