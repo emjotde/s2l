@@ -6,8 +6,9 @@
 StaticData StaticData::instance_;
 
 StaticData& StaticData::Init(const std::string& initString) {
-  std::vector<std::string> args;
-  boost::split(args, initString, boost::is_any_of(" "));
+  std::vector<std::string> args = po::split_unix(initString);
+  for(auto& s : args)
+    std::cerr << s << std::endl;
   int argc = args.size() + 1;
   char* argv[argc];
   argv[0] = const_cast<char*>("bogus");
@@ -25,6 +26,8 @@ StaticData& StaticData::NonStaticInit(int argc, char** argv) {
   po::options_description general("General options");
   general.add_options()
     ("vw-args", po::value<std::string>(),
+     "Options passed on to Vowpal Wabbit instance")
+    ("vw-override", po::value<std::string>(),
      "Options passed on to Vowpal Wabbit instance")
     ("train", po::value<std::string>(),
      "Path to training data")
@@ -85,13 +88,13 @@ StaticData& StaticData::NonStaticInit(int argc, char** argv) {
     exit(0);
   }
   
-  if(Has("save-per-pass") && !Has("final-model")) {
+  if(Get<bool>("save-per-pass") && !Has("final-model")) {
     std::cerr << "You need to specify final model name if you want to save "
                  "intermediate models per pass." << std::endl;
     exit(1);    
   }
   
-  if(Has("save-per-pass") && Get<size_t>("passes") <= 1) {
+  if(Get<bool>("save-per-pass") && Get<size_t>("passes") <= 1) {
     std::cerr << "For save-per-pass the number of passes needs to be greater than 1."
               << std::endl;
     exit(1);    

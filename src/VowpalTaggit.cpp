@@ -24,12 +24,17 @@ VowpalTaggit::~VowpalTaggit() {
 vw* VowpalTaggit::vwInit() { 
   std::stringstream vwSS;
   std::string vwString;
-  if(StaticData::Has("vw-args"))
-    vwString = StaticData::Get<std::string>("vw-args");
-  if(StaticData::Has("train"))
-    vwSS << vwTrainString(vwString);
-  else
-    vwSS << vwTestString(vwString);
+  if(StaticData::Has("vw-override")) {
+    vwSS << StaticData::Get<std::string>("vw-override");
+  }
+  else {
+    if(StaticData::Has("vw-args"))
+      vwString = StaticData::Get<std::string>("vw-args");
+    if(StaticData::Has("train"))
+      vwSS << vwTrainString(vwString);
+    else
+      vwSS << vwTestString(vwString);
+  }
   std::cerr << vwSS.str() << std::endl;
   return VW::initialize(vwSS.str());
 }
