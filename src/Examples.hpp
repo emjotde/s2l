@@ -8,6 +8,7 @@
 #include <map>
 #include <set>
 #include <sstream>
+#include <boost/algorithm/string.hpp>  
 
 struct Feature {
   Feature(const std::string& name) : name(name), weight(1.0) {}
@@ -95,6 +96,21 @@ class Lex {
     
     Lex& ctag(const std::string& ctag) {
       ctag_ = ctag;
+      
+      std::vector<std::string> strFrags;
+      boost::split(strFrags, ctag_, boost::is_any_of(":"));
+      
+      for(size_t i = 0; i < strFrags.size(); i++) {
+        if(!fragments_.count(strFrags[i]))
+          fragments_[strFrags[i]] = fragments_.size();
+        
+        if(i == 0)
+          pos_ = fragments_[strFrags[0]];
+        else
+          frags_.push_back(fragments_[strFrags[i]]);
+      }
+      std::sort(frags_.begin(), frags_.end());     
+      
       return *this;
     }
 
@@ -137,14 +153,28 @@ class Lex {
       return parent_;
     }
     
+    size_t pos() {
+      return pos_;
+    }
+    
+    std::vector<size_t>& frags() {
+      return frags_;
+    }
+    
   private:
     FeatureNS features_;
     static std::vector<std::function<void(Lex&)>> hooks_;
     
     std::string base_;
     std::string ctag_;
+    
+    size_t pos_;
+    std::vector<size_t> frags_;
+    
     bool oracle_;
     Tok& parent_;
+    
+    static std::map<std::string, size_t> fragments_;
 };
 
 class Sent;

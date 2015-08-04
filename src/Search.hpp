@@ -19,7 +19,7 @@ class SequenceLabeler : public SearchTask<Sent, History> {
     
   SequenceLabeler(vw* vw_obj)
       : SearchTask<Sent, History>(*vw_obj) { 
-    sch.set_options( Search::AUTO_HAMMING_LOSS | Search::NO_CACHING | Search::IS_LDF );
+    sch.set_options( /* Search::AUTO_HAMMING_LOSS | */ Search::NO_CACHING | Search::IS_LDF );
   }
   
   void AddConditions(Tok& tok, Lex& prev, char ns) {
@@ -73,11 +73,44 @@ class SequenceLabeler : public SearchTask<Sent, History> {
     }
   }
   
+  float normalLoss(Tok& tok, size_t o, size_t p) {
+    if(o != p)
+      return 1.0;
+    return 0.0;
+  }
+  
+  float delta(size_t pa, size_t pb) {
+    return pa == pb ? 1.0 : 0.0;
+  }
+  
+  float interUnion(std::vector<size_t>& a, std::vector<size_t>& b) {
+    std::vector<size_t> sortedInter;
+    std::vector<size_t> sortedUnion;
+    
+    if(a.size() == 0 && b.size() == 0)
+      return 1.0;
+
+    if(a.size() == 0 || b.size() == 0)
+      return 0.0;
+    
+    std::set_intersection(a.begin(), a.end(), b.begin(), b.end(), std::back_inserter(sortedInter));
+    std::set_union(a.begin(), a.end(), b.begin(), b.end(), std::back_inserter(sortedUnion));
+    
+    //std::cerr << (float)sortedInter.size() << " " << (float)sortedUnion.size() << std::endl;
+    return (float)sortedInter.size() / (float)sortedUnion.size();
+  }
+  
+  float fragLoss(Tok& tok, size_t o, size_t p) {
+    return 1.0 - 0.5 * delta(tok[o].pos(), tok[p].pos())
+               - 0.5 * interUnion(tok[o].frags(), tok[p].frags());
+  }
+  
   void _run(Search::search& sch, Sent& sentence, History& output) {
     output.clear();
     
     const size_t history_length = StaticData::Get<size_t>("history-length");
     
+    float loss = 0;
     for(size_t i = 0; i < sentence.size(); i++) {
       AddConditions(sentence, output, i, history_length);
       
@@ -88,9 +121,14 @@ class SequenceLabeler : public SearchTask<Sent, History> {
         .add_condition_range(i, history_length, hns_)
         .predict();
       
+      loss += fragLoss(sentence[i], morfs.oracle(), p);
+      //std::cerr << loss << std::endl;
+      
       StripConditions(sentence, i, history_length);
       output.push_back(p);
     }
+    
+    sch.loss(loss);
   }
   
   private:

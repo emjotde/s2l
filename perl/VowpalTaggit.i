@@ -29,7 +29,6 @@ class StaticData {
 class VowpalTaggit {
   public:
     VowpalTaggit();
-    VowpalTaggit(const std::string&);
     
     VowpalTaggit& learn();
     

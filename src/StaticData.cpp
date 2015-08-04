@@ -7,8 +7,6 @@ StaticData StaticData::instance_;
 
 StaticData& StaticData::Init(const std::string& initString) {
   std::vector<std::string> args = po::split_unix(initString);
-  for(auto& s : args)
-    std::cerr << s << std::endl;
   int argc = args.size() + 1;
   char* argv[argc];
   argv[0] = const_cast<char*>("bogus");
