@@ -101,8 +101,9 @@ class SequenceLabeler : public SearchTask<Sent, History> {
   }
   
   float fragLoss(Tok& tok, size_t o, size_t p) {
-    return 1.0 - 0.5 * delta(tok[o].pos(), tok[p].pos())
-               - 0.5 * interUnion(tok[o].frags(), tok[p].frags());
+    if(o >= tok.size())
+      return 1.0;
+    return 1.0 - interUnion(tok[o].frags(), tok[p].frags());
   }
   
   void _run(Search::search& sch, Sent& sentence, History& output) {
@@ -121,7 +122,8 @@ class SequenceLabeler : public SearchTask<Sent, History> {
         .add_condition_range(i, history_length, hns_)
         .predict();
       
-      loss += fragLoss(sentence[i], morfs.oracle(), p);
+      loss += normalLoss(sentence[i], morfs.oracle(), p)
+              + fragLoss(sentence[i], morfs.oracle(), p);
       //std::cerr << loss << std::endl;
       
       StripConditions(sentence, i, history_length);

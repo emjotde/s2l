@@ -104,10 +104,10 @@ class Lex {
         if(!fragments_.count(strFrags[i]))
           fragments_[strFrags[i]] = fragments_.size();
         
-        if(i == 0)
-          pos_ = fragments_[strFrags[0]];
-        else
-          frags_.push_back(fragments_[strFrags[i]]);
+        //if(i == 0)
+        //  pos_ = fragments_[strFrags[0]];
+        //else
+        frags_.push_back(fragments_[strFrags[i]]);
       }
       std::sort(frags_.begin(), frags_.end());     
       

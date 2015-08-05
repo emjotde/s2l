@@ -7,12 +7,12 @@ tagged.accuracy: tagged.xml
 	tagged.xml data/test01disamb.xml | tee $@ | grep AVG
 
 tagged.xml : tagged.idx
-	cat $^ | perl scripts/vw2ces.pl -i data/test01.xml --unk-in data/train01.dic > $@
+	cat $^ | perl scripts/vw2ces.pl -i data/test01.xml > $@
 
 tagged.idx: trainer data/train01.flat data/test01.flat
-	./trainer --train data/train01.flat_unk --test data/test01.flat_unk \
+	./trainer --train data/train01.flat --test data/test01.flat \
 	--window 2 --history-length 3 --classes data/pl.classes \
-	--passes 3 --save-per-pass --final-model model.weights > tagged.idx
+	--passes 3  --final-model model.weights > tagged.idx
 
 ################################################################################
 
@@ -20,7 +20,7 @@ HEADER=src/VowpalTaggit.hpp src/libsearch.h src/Search.hpp src/Examples.hpp src/
 IMPLEM=src/VowpalTaggit.cpp src/Examples.cpp src/Features.cpp src/StaticData.cpp src/Search.cpp
 
 trainer: src/trainer.cpp $(IMPLEM) $(HEADER)
-	g++ src/trainer.cpp $(IMPLEM) -std=c++11 -g -O0 -Ofast -march=native \
+	g++ src/trainer.cpp $(IMPLEM) -std=c++11 -O3 -Ofast -march=native \
 	 -fno-align-functions -fno-align-loops -lvw -lpcrecpp \
 	 -lboost_program_options -o $@
 
