@@ -55,7 +55,7 @@ sub annotUNK {
         }
     }
     
-    my ($found, @ldfs) = Unk::getUNKs($orth, 25, 0);
+    my ($found, @ldfs) = Unk::getUNKs($orth, 25);
     foreach (@ldfs) {
         my ($base, $ctag, undef) = @$_;
         push(@OUT, "lex", "base\t$base", "ctag\t$ctag") if($ctag ne $octag);
