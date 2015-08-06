@@ -7,12 +7,12 @@ tagged.accuracy: tagged.xml
 	tagged.xml data/test01disamb.xml | tee $@ | grep AVG
 
 tagged.xml : tagged.idx
-	cat $^ | perl scripts/vw2ces.pl -i data/test01.xml --unk-in data/train01.dic > $@
+	cat $^ | perl scripts/vw2ces2.pl -i data/test01.xml --unk-in data/test.unk.predict.txt > $@
 
 tagged.idx: trainer data/train01.flat data/test01.flat
-	./trainer --train data/train01.flat_unk --test data/test01.flat_unk \
+	./trainer --train data/train01.flat_unk --test data/test01.flat_unk5 \
 	--window 2 --history-length 3 --classes data/pl.classes \
-	--passes 1  --final-model model.weights > tagged.idx
+	--passes 3  --final-model model.weights > tagged.idx
 
 ################################################################################
 
