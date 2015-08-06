@@ -11,16 +11,14 @@ binmode(STDIN, ":utf8");
 binmode(STDOUT, ":utf8");
 
 my $IN;
-my $ME = 0;
-my $TAGS = 0;
+my $ME = 1;
+my $TAGS = 1;
 
-my $CLS = undef;
+my $CLS = "data/pl.classes";
 my $EM = undef;
-my $UNKOUT = undef;
-my $UNKIN = undef;
+my $UNKIN = "data/train01.dic";
 my $WINDOW = 2;
 my $LIMIT = 25;
-my $RATIO = undef;
 
 my $SIMPLE;
 
@@ -31,11 +29,8 @@ GetOptions(
   'e|embeddings=s' => \$EM,
   't|tags' => \$TAGS,
   'w|window=i' => \$WINDOW,
-  'unk-out=s' => \$UNKOUT, 
   'unk-in=s' => \$UNKIN,
   'unk-limit=i' => \$LIMIT,
-  'unk-ratio=f' => \$RATIO,
-  'simple' => \$SIMPLE,
 );
 
 my %UNKS;
@@ -112,7 +107,7 @@ sub addUNKs {
   $SEEN{$_} = 1 foreach(map { $_->[1] } @{$t->{lexemes}});
   
   my $word = $t->{orth};
-  my ($found, @choices) = Unk::getUNKs($word, $LIMIT, 0, $RATIO);
+  my ($found, @choices) = Unk::getUNKs($word, $LIMIT, 0);
   foreach my $c (@choices) {
     push(@{$t->{lexemes}}, $c) if(not exists($SEEN{$c->[1]}));
   }
@@ -137,53 +132,46 @@ sub LDFeatures {
     my $cost = 1 - $l->[2];
     my $tag = $l->[1];
     my $base = $l->[0];
-    
-    push(@{$UNKS{$t->{orth}}}, $l) if ($UNKOUT and $HAS_UNK and $tag ne "ign");
-    
+        
     my @subtags = split(/\:/, $tag);
     
     push(@ldf, "1111:$cost", "|t");
-    #push(@ldf, "is_unk") if($HAS_UNK);
-    #push(@ldf, "fillup") if($FILL);
-    #push(@ldf, "dic") if($HAS_UNK and not $FILL);
     push(@ldf, "t^" . esc($tag));
     push(@ldf, "b^" . esc($base));
-#    push(@ldf, map { "m^$_" } @subtags) if(not $SIMPLE);
+    push(@ldf, map { "m^$_" } @subtags) if(not $SIMPLE);
     
-    #if (not $SIMPLE) {    
-    #  push(@ldf, "|m");
-    #  
-    #  my $i = $t->{i};
-    #  my $j = 1;
-    #  while ($j <= $window-1 and $i - $j >= 0 and defined($s->[$i - $j])) {
-    #    my $tok = $s->[$i - $j];
-    #    my @tags = map { $_->[1] } @{$tok->{lexemes}};
-    #    foreach my $t (@tags) {
-    #      if ($tag eq $t) {
-    #        push(@ldf, "pt${j}^match^" . esc($tag));
-    #      }
-    #      my @subt = split(/\:/, $t);
-    #      push(@ldf, map { "pt${j}^match^F^$_" } match(\@subtags, \@subt));
-    #    }
-    #    $j++;
-    #  }
-    #  
-    #  $j = 1;
-    #  while ($j <= $window-1 and $i + $j < @$s and defined($s->[$i + $j])) {
-    #    my $tok = $s->[$i + $j];
-    #    my @tags = map { $_->[1] } @{$tok->{lexemes}};
-    #    foreach my $t (@tags) {
-    #      if ($tag eq $t) {
-    #        push(@ldf, "nt${j}^match^" . esc($tag));
-    #      }
-    #      
-    #      my @subt = split(/\:/, $t);
-    #      push(@ldf, map { "nt${j}^match^F^$_" } match(\@subtags, \@subt));
-    #    }
-    #    $j++;
-    #  }
-    #}
+    push(@ldf, "|m");
+      
+    my $i = $t->{i};
+    my $j = 1;
+    while ($j <= $window-1 and $i - $j >= 0 and defined($s->[$i - $j])) {
+      my $tok = $s->[$i - $j];
+      my @tags = map { $_->[1] } @{$tok->{lexemes}};
+      foreach my $t (@tags) {
+        if ($tag eq $t) {
+          push(@ldf, "pt${j}^match^" . esc($tag));
+        }
+        my @subt = split(/\:/, $t);
+        push(@ldf, map { "pt${j}^match^F^$_" } match(\@subtags, \@subt));
+      }
+      $j++;
+    }
     
+    $j = 1;
+    while ($j <= $window-1 and $i + $j < @$s and defined($s->[$i + $j])) {
+      my $tok = $s->[$i + $j];
+      my @tags = map { $_->[1] } @{$tok->{lexemes}};
+      foreach my $t (@tags) {
+        if ($tag eq $t) {
+          push(@ldf, "nt${j}^match^" . esc($tag));
+        }
+        
+        my @subt = split(/\:/, $t);
+        push(@ldf, map { "nt${j}^match^F^$_" } match(\@subtags, \@subt));
+      }
+      $j++;
+    }
+  
     push(@LDFs, join(" ", @ldf));
   }
   
@@ -381,15 +369,3 @@ my $twig = XML::Twig->new(
     }
 );
 $twig->parsefile($IN);
-
-if ($UNKOUT) {
-  open(UNK, ">:utf8", $UNKOUT) or die "Could not open $UNKOUT";
-  foreach my $unk (sort keys %UNKS) {
-    foreach my $l (@{$UNKS{$unk}}) {
-      my ($base, $tag) = @$l;
-      print UNK "$unk\t$base\t$tag\n";
-    }
-  }
-  close(UNK);
-}
-

@@ -39,7 +39,7 @@ while (<STDIN>) {
         $FNs += $fn;
     }
     else {
-        print STDERR "$found $w\t$tag\n" if($fn);
+        #print STDERR "$found $w\t$tag\n" if($fn);
         #print STDERR Dumper([Unk::getSimilar($w, 3)]) if($fn);
         $TPu += $tp;
         $FPu += $fp;
