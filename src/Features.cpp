@@ -235,6 +235,14 @@ void lfdFeatures() {
     lex.getNamespace()['t'].emplace_back("t^" + lex.getCtag());
   });
 
+  // Add unk to LDF
+  Lex::FF([](Lex& lex) {
+    if(lex.isUnk())
+      lex.getNamespace()['t'].emplace_back("u^isUnk");
+    else
+      lex.getNamespace()['t'].emplace_back("u^isKnown");
+  });
+
   // Add base to LDF
   Lex::FF([](Lex& lex) {
     lex.getNamespace()['t'].emplace_back("b^" + lex.getBase());

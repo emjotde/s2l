@@ -46,8 +46,8 @@ sub annotUNK {
             $obase = $base;
             $octag = $ctag;
         }
-        
         push(@OUT, $l);
+        push(@OUT, "unk") if($l eq "oracle");
         if ($l eq "ctag\tign") {
             pop(@OUT);
             pop(@OUT);
@@ -58,7 +58,7 @@ sub annotUNK {
     my ($found, @ldfs) = Unk::getUNKs($orth, 25);
     foreach (@ldfs) {
         my ($base, $ctag, undef) = @$_;
-        push(@OUT, "lex", "base\t$base", "ctag\t$ctag") if($ctag ne $octag);
+        push(@OUT, "lex", "base\t$base", "ctag\t$ctag", "unk") if($ctag ne $octag);
     }
     
     @$q = @OUT;

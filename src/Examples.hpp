@@ -84,7 +84,7 @@ class Tok;
 
 class Lex {
   public:
-    Lex(Tok& parent) : oracle_(false), parent_(parent) {};
+    Lex(Tok& parent) : oracle_(false), unk_(false), parent_(parent) {};
 
     const std::string& base() { return base_; }
     const std::string& ctag() { return ctag_; }
@@ -121,6 +121,15 @@ class Lex {
 
     bool isOracle() {
        return oracle_;
+    }
+
+    Lex& unk() {
+      unk_ = true;
+      return *this;
+    }
+
+    bool isUnk() {
+       return unk_;
     }
 
     const std::string& getBase() {
@@ -172,6 +181,7 @@ class Lex {
     std::vector<size_t> frags_;
     
     bool oracle_;
+    bool unk_;
     Tok& parent_;
     
     static std::map<std::string, size_t> fragments_;
@@ -196,6 +206,8 @@ class Tok {
         lex_.back().ctag(lex.getCtag());
         if(lex.isOracle())
           lex_.back().oracle();
+        if(lex.isUnk())
+          lex_.back().unk();
       }
     }
 
@@ -349,6 +361,11 @@ class Sent {
     
     Sent& oracle() {
       tok_.back().back().oracle();
+      return *this;
+    }
+
+    Sent& unk() {
+      tok_.back().back().unk();
       return *this;
     }
 

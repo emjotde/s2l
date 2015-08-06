@@ -98,6 +98,8 @@ VowpalTaggit& VowpalTaggit::readLine(const std::string& line) {
       ctag(param);
     } else if(action == "oracle") {
       oracle();
+    } else if(action == "unk") {
+      unk();
     } else if(action == "eos") {
       eos();
     }
@@ -133,6 +135,7 @@ VowpalTaggit& VowpalTaggit::orth(const std::string& orth) { currSent_->orth(orth
 VowpalTaggit& VowpalTaggit::base(const std::string& base) { currSent_->base(base); return *this; }
 VowpalTaggit& VowpalTaggit::ctag(const std::string& ctag) { currSent_->ctag(ctag); return *this; }
 VowpalTaggit& VowpalTaggit::oracle() { currSent_->oracle(); return *this; }
+VowpalTaggit& VowpalTaggit::unk() { currSent_->unk(); return *this; }
 
 Sent& VowpalTaggit::getSent() {
   return *currSent_;

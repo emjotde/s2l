@@ -46,6 +46,7 @@ class VowpalTaggit {
     VowpalTaggit& base(const std::string& base);
     VowpalTaggit& ctag(const std::string& ctag);
     VowpalTaggit& oracle();
+    VowpalTaggit& unk();
     
     Sent& getSent();
     size_t sentNum();
