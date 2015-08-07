@@ -42,9 +42,7 @@ my $twig = XML::Twig->new(
           foreach my $t (@toks) {
             my @lexemes = $t->children('lex');
             my $bestIndex = $PRED[$COUNT];
-            if ($bestIndex >= @lexemes) {
-              my $tag = $lexemes[0]->first_child('ctag')->trimmed_text();
-              if (@lexemes == 1 and $tag eq "ign") {
+            if (grep { $_->first_child('ctag')->trimmed_text() eq "ign" } @lexemes) {
                 my $word = $t->first_child('orth')->trimmed_text();
                 my ($found, @choices) = Unk::getUNKs($word, 25, 0);
                 if (@choices) {
@@ -56,7 +54,7 @@ my $twig = XML::Twig->new(
                   $lexemes[0]->first_child('ctag')->set_text($tag); 
                 }
                 #$newlex->paste('last_child', $t);
-              }
+              
             }
             
             my $i = 0;
