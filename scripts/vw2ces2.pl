@@ -29,7 +29,7 @@ while(<UNK>) {
     next;
   }
   my ($w, $b, $t, $s) = split(/\t/, $_);
-  push(@{$UNKS[-1]}, [$w, $t, $s]) if (@{$UNKS[-1]} < 5);
+  push(@{$UNKS[-1]}, [$w, $t, $s]) if (@{$UNKS[-1]} < 10);
 }
 
 
